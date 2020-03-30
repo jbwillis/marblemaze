@@ -77,6 +77,8 @@ def get_corners(frame):
 
 
 vid = cv.VideoCapture('../images/maze.avi')
+fourcc = cv.VideoWriter_fourcc(*'XVID')
+vid_out = cv.VideoWriter('../images/maze_transform.avi',fourcc, 30.0, (400,400))
 
 dst_corners = np.float32([[0,0],[0,400],[400,0],[400,400]])
 
@@ -86,7 +88,11 @@ while vid.isOpened():
         break
 
     start = time.time()
-    board, corners = get_corners(frame)
+    try:
+        board, corners = get_corners(frame)
+    except:
+        print("Bad frame! Skipping...")
+        continue
     # frame_corners = frame.copy()
     # for i in range(corners.shape[0]):
     #     cv.circle(frame_corners, (int(corners.item(i,0)), int(corners.item(i,1))), 5, (0,255,0))
@@ -95,6 +101,7 @@ while vid.isOpened():
     warped = cv.warpPerspective(frame, H, (400,400))
     print(time.time()-start)
 
+    vid_out.write(warped)
     # cv.imshow('vid',frame_corners)
     cv.imshow('board_cnt', board)
     cv.imshow('warped', warped)
@@ -104,3 +111,4 @@ while vid.isOpened():
 
 cv.destroyAllWindows()
 vid.release()
+vid_out.release()
