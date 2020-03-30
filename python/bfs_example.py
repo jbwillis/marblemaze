@@ -81,7 +81,7 @@ def out_of_bounds(size, node, edge):
     return False
 
 
-def make_board(size, num_walls):
+def make_random_maze(size, num_walls):
     w = size[0]
     h = size[1]
     #each row is [up, down, left, right]
@@ -166,7 +166,7 @@ if __name__=="__main__":
 
     #nodes run from left to right, top to bottom
     nodes = [i for i in range(board_w*board_h)]
-    edges = make_board((board_w,board_h), num_walls)
+    edges = make_random_maze((board_w,board_h), num_walls)
 
     start = time.time()
     policy, dist = bfs((board_w,board_h), edges, goal)
