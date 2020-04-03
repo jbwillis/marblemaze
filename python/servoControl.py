@@ -48,13 +48,23 @@ if __name__=="__main__":
     print("Testing ServoControl")
     sc = ServoControl()
 
-    # from 0 to 1 to -1 to 0
-    steps = np.concatenate((np.linspace(0, -1, 20), np.linspace(-1, 1, 40), np.linspace(1, 0, 20)))
-    for i in steps:
-        sc.writeCommand(i, 0.0) 
-        time.sleep(.2)
+    # # from 0 to 1 to -1 to 0
+    # steps = np.concatenate((np.linspace(0, -1, 20), np.linspace(-1, 1, 40), np.linspace(1, 0, 20)))
+    # for i in steps:
+        # sc.writeCommand(i, 0.0) 
+        # time.sleep(.2)
         
+    # for i in steps:
+        # sc.writeCommand(0.0, i) 
+        # time.sleep(.2)
+    
+    # get into starting position
+    steps = np.linspace(0., .5, 20)
     for i in steps:
         sc.writeCommand(0.0, i) 
         time.sleep(.2)
 
+    while True:
+        for th in np.linspace(0, 2*np.pi, 80):
+            sc.writeCommand(.5*np.sin(th), .5*np.cos(th))
+            time.sleep(.2)
