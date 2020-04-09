@@ -5,8 +5,17 @@ start = 0
 mazeHSVLow = np.array([start,0, 0])
 mazeHSVHigh = np.array([start+100,100,255])
 
-marbleHSVLow = np.array([30,60,100])
-marbleHSVHigh = np.array([50,150,255])
+# yellow ball
+# marbleHSVLow = np.array([30,60,100])
+# marbleHSVHigh = np.array([50,150,255])
+
+# green ball
+# marbleHSVLow = np.array([65,60,100])
+# marbleHSVHigh = np.array([90,170,255])
+
+# blue ball
+marbleHSVLow = np.array([105,100,80])
+marbleHSVHigh = np.array([120,255,255])
 
 def filterMazeNoise(img):
     kernel = np.ones((7,7),np.uint8)

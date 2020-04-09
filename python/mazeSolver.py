@@ -20,10 +20,14 @@ class mazeSolver:
         self.mazeHSVLow = np.array([0,0,0])
         self.mazeHSVHigh = np.array([100,100,255])
 
-        self.marbleHSVLow = np.array([30,60,100])
-        self.marbleHSVHigh = np.array([50,150,255])
+        # self.marbleHSVLow = np.array([30,60,100])
+        # self.marbleHSVHigh = np.array([50,150,255])
         # self.marbleHSVLow = np.array([30,50,100])
         # self.marbleHSVHigh = np.array([50,100,255])
+
+        # blue ball
+        self.marbleHSVLow = np.array([105,100,80])
+        self.marbleHSVHigh = np.array([120,255,255])
 
 
     def get_max_contour(self, binary):
