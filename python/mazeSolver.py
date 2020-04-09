@@ -41,28 +41,48 @@ class mazeSolver:
         return contours[max_index]
 
 
+    # def get_corners(self, frame):
+    #     frame = cv.medianBlur(frame, 5)
+    #     ret,walls_b = cv.threshold(frame[:,:,0],90,255,cv.THRESH_BINARY_INV)
+    #     ret,walls_g = cv.threshold(frame[:,:,1],80,255,cv.THRESH_BINARY_INV)
+    #     ret,walls_r = cv.threshold(frame[:,:,2],80,255,cv.THRESH_BINARY_INV)
+    #     walls = cv.bitwise_or(cv.bitwise_or(walls_g, walls_b), walls_r)
+    #     cv.imshow("walls", walls)
+    #
+    #     erosion_size = 1
+    #     element = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2*erosion_size + 1, 2*erosion_size+1), (erosion_size, erosion_size))
+    #     walls = cv.erode(walls, element)
+    #     walls = cv.dilate(walls, element)
+    #
+    #     erosion_size = 2
+    #     element = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2*erosion_size + 1, 2*erosion_size+1), (erosion_size, erosion_size))
+    #     walls = cv.dilate(walls, element)
+    #     walls = cv.erode(walls, element)
+    #
+    #     wall_cnt = self.get_max_contour(walls)
+    #
+    #     epsilon = 0.1*cv.arcLength(wall_cnt, True)
+    #     approx = cv.approxPolyDP(wall_cnt, epsilon, True).reshape(4,2)
+    #     approx = approx[np.argsort(approx[:, 0])]
+    #     left_y = np.argmin([approx[0,1],approx[1,1]])
+    #     right_y = np.argmin([approx[2,1],approx[3,1]])
+    #     if left_y:
+    #         approx[[0, 1]] = approx[[1, 0]]
+    #     if right_y:
+    #         approx[[2, 3]] = approx[[3, 2]]
+    #
+    #     return approx
+
     def get_corners(self, frame):
-        frame = cv.medianBlur(frame, 5)
-        ret,walls_b = cv.threshold(frame[:,:,0],90,255,cv.THRESH_BINARY_INV)
-        ret,walls_g = cv.threshold(frame[:,:,1],80,255,cv.THRESH_BINARY_INV)
-        ret,walls_r = cv.threshold(frame[:,:,2],80,255,cv.THRESH_BINARY_INV)
-        walls = cv.bitwise_or(cv.bitwise_or(walls_g, walls_b), walls_r)
-        cv.imshow("walls", walls)
+        frame = cv.medianBlur(frame[:,:590,:], 5)
+        ret,walls_r = cv.threshold(frame[:,:,2],30,255,cv.THRESH_BINARY_INV)
 
-        erosion_size = 1
-        element = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2*erosion_size + 1, 2*erosion_size+1), (erosion_size, erosion_size))
-        walls = cv.erode(walls, element)
-        walls = cv.dilate(walls, element)
+        wall_cnt, _ = cv.findContours(walls_r, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        contour = np.vstack([wall_cnt[i] for i in range(len(wall_cnt))])
+        hull = cv.convexHull(contour)
 
-        erosion_size = 2
-        element = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2*erosion_size + 1, 2*erosion_size+1), (erosion_size, erosion_size))
-        walls = cv.dilate(walls, element)
-        walls = cv.erode(walls, element)
-
-        wall_cnt = self.get_max_contour(walls)
-
-        epsilon = 0.1*cv.arcLength(wall_cnt, True)
-        approx = cv.approxPolyDP(wall_cnt, epsilon, True).reshape(4,2)
+        epsilon = 0.1*cv.arcLength(hull, True)
+        approx = cv.approxPolyDP(hull, epsilon, True).reshape(4,2)
         approx = approx[np.argsort(approx[:, 0])]
         left_y = np.argmin([approx[0,1],approx[1,1]])
         right_y = np.argmin([approx[2,1],approx[3,1]])
@@ -92,9 +112,9 @@ class mazeSolver:
         kernel3 = np.ones((1,1),np.uint8)
 
         img = cv.morphologyEx(img, cv.MORPH_CLOSE, kernel7, iterations=1)
-        img = cv.dilate(img,kernel7,iterations=3)
-        img = cv.erode(img,kernel7,iterations=2)
-        # img = cv.dilate(img,kernel3,iterations=2)
+        img = cv.dilate(img,kernel7,iterations=2)
+        img = cv.erode(img,kernel7,iterations=1)
+        # img = cv.erode(img,kernel3,iterations=2)
 
         return img
 
@@ -117,12 +137,12 @@ class mazeSolver:
         frameHSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
         marbleframe = cv.inRange(frameHSV, self.marbleHSVLow, self.marbleHSVHigh)
-        cv.imshow('marble_1', marbleframe)
+        # cv.imshow('marble_1', marbleframe)
         marbleframe = self.filterMarbleNoise(marbleframe)
-        cv.imshow('marble_2', marbleframe)
+        # cv.imshow('marble_2', marbleframe)
 
         marbleframe = cv.Canny(marbleframe,100,255)
-        cv.imshow('marble_conts', marbleframe)
+        # cv.imshow('marble_conts', marbleframe)
 
         marble = self.get_max_contour(marbleframe)
         marblerect = None
@@ -192,7 +212,7 @@ class mazeSolver:
 
     def buildGraph(self, maze):
         mazeLen = 12
-        checkSize = 1
+        checkSize = 3
         nodalMaze = np.zeros((mazeLen * mazeLen, 4))
 
         for i in range(mazeLen): #down
@@ -314,7 +334,7 @@ class mazeSolver:
 
         if  self.warped is not None:
             warp_draw = self.warped.copy()
-            
+
             if self.marble_pos is not None:
                 marble_center = (int(self.marble_pos[0]), int(self.marble_pos[1]))
                 cv.circle(warp_draw, marble_center, 15, (255,0,0), 2)
