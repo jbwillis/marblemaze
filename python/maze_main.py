@@ -5,13 +5,15 @@ from bfs_example import plot_board, plot_solution
 import time
 
 
-solve_every_time = True
 show_stuff = True
-solver = mazeSolver(solve_every_time, show_stuff)
+solver = mazeSolver(show_stuff)
 goal = 97 # goal position read from left to right, top to bottom
 
-vid = cv.VideoCapture('../images/maze.avi')
-#vid = cv.VideoCapture(0)
+# vid = cv.VideoCapture('../images/maze_blueball.avi')
+vid = cv.VideoCapture(0)
+
+solveFlag = False
+pause = True
 
 while vid.isOpened():
     start = time.time()
@@ -19,14 +21,33 @@ while vid.isOpened():
     if not ret:
         break
 
-    marble_pos, waypoint = solver.solveMaze(frame, goal)
+    marble_pos, waypoint = solver.solveMaze(frame, goal, solveFlag)
     print(marble_pos, waypoint)
     print(1/(time.time() - start))
+    solveFlag = False
 
     cv.imshow('frame', frame)
     # cv.waitKey(0)
-    if cv.waitKey(1) == ord('q'):
+
+    cmd = cv.waitKey(1)
+    if cmd == ord('q'):         # q = quit
         break
+    elif cmd == ord('s'):       # s = solve the maze
+        solveFlag = True
+    elif cmd == ord('g'):       # g = set the goal location
+        while True:
+            try:
+                goal = int(input("Enter a goal location between 0 and 143: "))
+                if goal >= 0 and goal <= 143:
+                    break
+                else:
+                    print("Invalid goal location")
+            except ValueError:
+                print("Integer only, please")
+    elif cmd == ord(' '):       # spacebar = pause controller
+        pause = not pause
+
+
 
 vid.release()
 cv.destroyAllWindows()

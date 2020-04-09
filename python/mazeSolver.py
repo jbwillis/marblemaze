@@ -2,12 +2,12 @@ import cv2 as cv
 import numpy as np
 
 class mazeSolver:
-    def __init__(self, solve_every_time, show_stuff):
-        self.solve_every_time = solve_every_time
+    def __init__(self, show_stuff):
         self.solved = False
         self.graph = None
         self.policy = None
         self.board_size = (12, 12)
+        self.maze_walls = None
 
         self.x_grid = np.linspace(20, 380, 12, dtype=int)
         self.y_grid = self.x_grid
@@ -47,6 +47,7 @@ class mazeSolver:
         ret,walls_g = cv.threshold(frame[:,:,1],80,255,cv.THRESH_BINARY_INV)
         ret,walls_r = cv.threshold(frame[:,:,2],80,255,cv.THRESH_BINARY_INV)
         walls = cv.bitwise_or(cv.bitwise_or(walls_g, walls_b), walls_r)
+        cv.imshow("walls", walls)
 
         erosion_size = 1
         element = cv.getStructuringElement(cv.MORPH_ELLIPSE, (2*erosion_size + 1, 2*erosion_size+1), (erosion_size, erosion_size))
@@ -258,77 +259,82 @@ class mazeSolver:
     # not found. Returns None if the current frame is bad. Solves maze every
     # time if self.solve_every_time is True. Otherwise, solves at the first call
     # or every time the goal node is changed.
-    def solveMaze(self, frame, goal):
+    def solveMaze(self, frame, goal, solveFlag):
         self.warped = self.perspectiveWarp(frame)
         if self.warped is None:
             return None, None
 
-        self.maze_walls, self.marble_pos = self.segmentImg(self.warped)
+        self.goal = goal
 
-        if self.solve_every_time or not self.solved or goal != self.goal:
+        maze_walls, self.marble_pos = self.segmentImg(self.warped)
+
+        # find the path to the goal
+        if solveFlag:
+            self.maze_walls = maze_walls
             self.graph = self.buildGraph(self.maze_walls)
             self.policy,_ = self.bfs(self.board_size, self.graph, goal)
-            self.goal = goal
             self.solved = True
-
-        if self.marble_pos is None:
-            return None, None
-
-        marble_x_closest = np.argmin(abs(self.marble_pos[0] - self.x_grid))
-        marble_y_closest = np.argmin(abs(self.marble_pos[1] - self.y_grid))
-        current_grid_x = self.x_grid.item(marble_x_closest)
-        current_grid_y = self.y_grid.item(marble_y_closest)
-
-        goal_pos = (int(self.goal%12.0), int(np.floor(self.goal/12.0)))
-
-        policy_grid = np.array([self.policy]).reshape(self.board_size).astype(int)
-        direction = policy_grid[marble_y_closest, marble_x_closest]
-        if direction == 0:
-            waypoint = (current_grid_x, self.y_grid.item(marble_y_closest-1))
-        elif direction == 1:
-            waypoint = (current_grid_x, self.y_grid.item(marble_y_closest+1))
-        elif direction == 2:
-            waypoint = (self.x_grid.item(marble_x_closest-1), current_grid_y)
-        elif direction == 3:
-            waypoint = (self.x_grid.item(marble_x_closest+1), current_grid_y)
-        elif direction == -1 and (marble_x_closest, marble_y_closest) == goal_pos:
-            print("Goal!!!!")
-            waypoint = None
-        else:
-            print("This maze is unsolvable!")
-            waypoint = None
-
 
         if self.show_stuff:
             self.showCoolStuff()
 
-        return self.marble_pos, waypoint
+        if self.solved and self.marble_pos is not None:
 
+            marble_x_closest = np.argmin(abs(self.marble_pos[0] - self.x_grid))
+            marble_y_closest = np.argmin(abs(self.marble_pos[1] - self.y_grid))
+            current_grid_x = self.x_grid.item(marble_x_closest)
+            current_grid_y = self.y_grid.item(marble_y_closest)
+
+            goal_pos = (int(self.goal%12.0), int(np.floor(self.goal/12.0)))
+
+            policy_grid = np.array([self.policy]).reshape(self.board_size).astype(int)
+            direction = policy_grid[marble_y_closest, marble_x_closest]
+            if direction == 0:
+                waypoint = (current_grid_x, self.y_grid.item(marble_y_closest-1))
+            elif direction == 1:
+                waypoint = (current_grid_x, self.y_grid.item(marble_y_closest+1))
+            elif direction == 2:
+                waypoint = (self.x_grid.item(marble_x_closest-1), current_grid_y)
+            elif direction == 3:
+                waypoint = (self.x_grid.item(marble_x_closest+1), current_grid_y)
+            elif direction == -1 and (marble_x_closest, marble_y_closest) == goal_pos:
+                print("Goal!!!!")
+                waypoint = None
+            else:
+                print("This maze is unsolvable!")
+                waypoint = None
+
+            return self.marble_pos, waypoint
+        else:
+            return None, None # no position, no waypoint
 
     def showCoolStuff(self):
         if self.maze_walls is not None:
             cv.imshow('maze walls', self.maze_walls)
 
-        if self.marble_pos is not None and self.warped is not None:
+        if  self.warped is not None:
             warp_draw = self.warped.copy()
-            marble_center = (int(self.marble_pos[0]), int(self.marble_pos[1]))
-            cv.circle(warp_draw, marble_center, 15, (255,0,0), 2)
+            
+            if self.marble_pos is not None:
+                marble_center = (int(self.marble_pos[0]), int(self.marble_pos[1]))
+                cv.circle(warp_draw, marble_center, 15, (255,0,0), 2)
 
-            policy_grid = np.array([self.policy]).reshape(self.board_size).astype(int)
-            for i in range(12): #down
-                for j in range(12): #right
-                    cv.circle(warp_draw, (self.x_grid.item(i),self.y_grid.item(j)), 3, (0,0,0), -1)
-                    direct = policy_grid[i,j]
-                    if direct == 0:
-                        cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j),self.y_grid.item(i-1)), (0,0,255), tipLength=0.3)
-                    elif direct == 1:
-                        cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j),self.y_grid.item(i+1)), (0,0,255), tipLength=0.3)
-                    elif direct == 2:
-                        cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j-1),self.y_grid.item(i)), (0,0,255), tipLength=0.3)
-                    elif direct == 3:
-                        cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j+1),self.y_grid.item(i)), (0,0,255), tipLength=0.3)
+            if self.policy is not None:
+                policy_grid = np.array([self.policy]).reshape(self.board_size).astype(int)
+                for i in range(12): #down
+                    for j in range(12): #right
+                        cv.circle(warp_draw, (self.x_grid.item(i),self.y_grid.item(j)), 3, (0,0,0), -1)
+                        direct = policy_grid[i,j]
+                        if direct == 0:
+                            cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j),self.y_grid.item(i-1)), (0,0,255), tipLength=0.3)
+                        elif direct == 1:
+                            cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j),self.y_grid.item(i+1)), (0,0,255), tipLength=0.3)
+                        elif direct == 2:
+                            cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j-1),self.y_grid.item(i)), (0,0,255), tipLength=0.3)
+                        elif direct == 3:
+                            cv.arrowedLine(warp_draw, (self.x_grid.item(j),self.y_grid.item(i)), (self.x_grid.item(j+1),self.y_grid.item(i)), (0,0,255), tipLength=0.3)
 
             goal_pos = (self.x_grid.item(int(self.goal%12.0)), self.y_grid.item(int(np.floor(self.goal/12.0))))
             cv.circle(warp_draw, goal_pos, 5, (0,255,0), -1)
 
-            cv.imshow('marble', warp_draw)
+            cv.imshow('Policy and Marble', warp_draw)
