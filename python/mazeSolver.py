@@ -17,8 +17,8 @@ class mazeSolver:
         self.dst_corners = np.float32([[0,0],[0,400],[400,0],[400,400]])
         self.perspective_size = (400,400)
 
-        self.mazeHSVLow = np.array([0,0,0])
-        self.mazeHSVHigh = np.array([100,100,255])
+        self.mazeBGRLow = np.array([0,0,0])
+        self.mazeBGRHigh = np.array([120,120,120])
 
         # self.marbleHSVLow = np.array([30,60,100])
         # self.marbleHSVHigh = np.array([50,150,255])
@@ -110,29 +110,45 @@ class mazeSolver:
 
 
     def segmentImg(self, frame):
-        maze = cv.inRange(frame, self.mazeHSVLow, self.mazeHSVHigh)
-        maze = self.filterMazeNoise(maze)
+        frame = cv.medianBlur(frame, 5)
 
+        # find marble
         frameHSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
         marbleframe = cv.inRange(frameHSV, self.marbleHSVLow, self.marbleHSVHigh)
-        marbleframe = cv.subtract(marbleframe,maze)
+        cv.imshow('marble_1', marbleframe)
         marbleframe = self.filterMarbleNoise(marbleframe)
+        cv.imshow('marble_2', marbleframe)
+
         marbleframe = cv.Canny(marbleframe,100,255)
         cv.imshow('marble_conts', marbleframe)
 
         marble = self.get_max_contour(marbleframe)
+        marblerect = None
         if marble is not None:
             center, rad = cv.minEnclosingCircle(marble)
+            if rad < 10.0:
+                print("Where's the marble?!!")
+                center = None # didn't actually find the marble
+            else:
+                marblerect = cv.boundingRect(marble)
         else:
             print("Where's the marble?!!")
             center = None
 
-        # ####### shows circle tracking marble
-        # cv.circle(frame,center,15,(255,0,0),2)
-        # cv.imshow('Marble',frame)
-        # cv.imshow('maze', maze)
-        # # cv.waitKey(200)
+
+        # find maze walls
+        maze = cv.inRange(frame, self.mazeBGRLow, self.mazeBGRHigh)
+        cv.imshow("maze marble", maze)
+
+        if marblerect is not None:
+            x, y, w, h = marblerect
+            # remove marble from maze
+            cv.rectangle(maze, (x-2,y-2), (x+w+2, y+h+2), 0, -1) # black, filled rectangle
+
+
+        maze = self.filterMazeNoise(maze)
+        cv.imshow("maze no marble", maze)
 
         return maze, center
 
