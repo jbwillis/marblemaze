@@ -76,7 +76,7 @@ def get_corners(frame):
     return walls, approx
 
 
-vid = cv.VideoCapture('../images/maze.avi')
+vid = cv.VideoCapture('../images/maze_blueball.avi')
 fourcc = cv.VideoWriter_fourcc(*'XVID')
 vid_out = cv.VideoWriter('../images/maze_transform.avi',fourcc, 30.0, (400,400))
 
@@ -89,7 +89,8 @@ while vid.isOpened():
 
     start = time.time()
     try:
-        board, corners = get_corners(frame)
+        # board, corners = get_corners(frame)
+        corners = get_corners_color(frame)
     except:
         print("Bad frame! Skipping...")
         continue
@@ -97,11 +98,12 @@ while vid.isOpened():
     # for i in range(corners.shape[0]):
     #     cv.circle(frame_corners, (int(corners.item(i,0)), int(corners.item(i,1))), 5, (0,255,0))
 
+    cv.waitKey()
     H,_ = cv.findHomography(corners, dst_corners)
     warped = cv.warpPerspective(frame, H, (400,400))
     print(time.time()-start)
 
-    vid_out.write(warped)
+    # vid_out.write(warped)
     # cv.imshow('vid',frame_corners)
     cv.imshow('board_cnt', board)
     cv.imshow('warped', warped)
