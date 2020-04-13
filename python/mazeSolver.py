@@ -295,8 +295,7 @@ class mazeSolver:
             self.policy,_ = self.bfs(self.board_size, self.graph, goal)
             self.solved = True
 
-        if self.show_stuff:
-            self.showCoolStuff()
+        self.waypoint = None
 
         if self.solved and self.marble_pos is not None:
 
@@ -319,14 +318,20 @@ class mazeSolver:
                 waypoint = (self.x_grid.item(marble_x_closest+1), current_grid_y)
             elif direction == -1 and (marble_x_closest, marble_y_closest) == goal_pos:
                 print("Goal!!!!")
-                waypoint = None
+                waypoint = goal_pos
             else:
                 print("This maze is unsolvable!")
                 waypoint = None
+            self.waypoint = waypoint
 
-            return self.marble_pos, waypoint
+        if self.show_stuff:
+            self.showCoolStuff()
+
+        if self.marble_pos is not None:
+            return np.array(self.marble_pos), self.waypoint
         else:
-            return None, None # no position, no waypoint
+            return self.marble_pos, self.waypoint
+
 
     def showCoolStuff(self):
         if self.maze_walls is not None:
@@ -337,7 +342,11 @@ class mazeSolver:
 
             if self.marble_pos is not None:
                 marble_center = (int(self.marble_pos[0]), int(self.marble_pos[1]))
-                cv.circle(warp_draw, marble_center, 15, (255,0,0), 2)
+                cv.circle(warp_draw, marble_center, 15, (255,255,0), 2)
+
+            if self.waypoint is not None:
+                wp_center = (int(self.waypoint[0]), int(self.waypoint[1]))
+                cv.circle(warp_draw, wp_center, 5, (0,255,255), -1)
 
             if self.policy is not None:
                 policy_grid = np.array([self.policy]).reshape(self.board_size).astype(int)
