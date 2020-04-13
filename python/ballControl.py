@@ -40,12 +40,12 @@ class ballController:
         self.deriv_x = a1*self.deriv_x + a2*(err_x - self.erkm1_x)
         self.deriv_y = a1*self.deriv_y + a2*(err_y - self.erkm1_y)
 
-        if abs(self.deriv_x < self.vbar):
+        if abs(self.deriv_x) < self.vbar:
             self.integ_x += (Ts/2)*(err_x + self.erkm1_x)
         else:
             self.integ_x = 0.0
 
-        if abs(self.deriv_y < self.vbar):
+        if abs(self.deriv_y) < self.vbar:
             self.integ_y += (Ts/2)*(err_y + self.erkm1_y)
         else:
             self.integ_y = 0.0
