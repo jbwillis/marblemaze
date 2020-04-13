@@ -6,13 +6,13 @@ class ballController:
 
         self.err_max = 400.0
 
-        self.kP_x = 1.1*.45
-        self.kI_x = 1.5*.0
-        self.kD_x = 1.5*.2
+        self.kP_x = 1.1*.5
+        self.kI_x = 1.5*.1
+        self.kD_x = 1.5*.15
 
-        self.kP_y = 2.*.3
-        self.kI_y = 2.*.1
-        self.kD_y = 2.*.3
+        self.kP_y = 1.5*.35
+        self.kI_y = 1.5*.1
+        self.kD_y = 1.5*.2
 
         self.integ_x = 0.
         self.deriv_x = 0.
