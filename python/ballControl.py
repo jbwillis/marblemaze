@@ -22,15 +22,17 @@ class ballController:
         self.deriv_y = 0.
         self.erkm1_y = 0.
 
-        self.sigma = .5
-        self.vbar = .1
-        self.sat_lim = .25
+        self.sigma = .1
+        self.vbar = .001
+        self.sat_lim = .3
 
     def update(self, position, waypoint, Ts):
 
         # calculate error and have it be on the order of 10^0
         err_x = (float(waypoint[0]) - position[0])/self.err_max
-        err_y = 0.0#(float(waypoint[1]) - position[1])/self.err_max
+        err_x = self.sat(err_x, .2)
+        err_y = (float(waypoint[1]) - position[1])/self.err_max
+        err_y = self.sat(err_y, .2)
 
         print("err_x = {}, erry_y = {}".format(err_x, err_y))
         
@@ -55,8 +57,8 @@ class ballController:
         u_unsat_y = self.kP_y*err_y + self.kI_y*self.integ_y + self.kD_y*self.deriv_y
         print("p_y = {},\t\ti_y = {},\t\td_y = {}".format(self.kP_y*err_y, self.kI_y*self.integ_y, self.kD_y*self.deriv_y))
 
-        u_sat_x = self.sat(u_unsat_x)
-        u_sat_y = self.sat(u_unsat_y)
+        u_sat_x = self.sat(u_unsat_x, self.sat_lim)
+        u_sat_y = self.sat(u_unsat_y, self.sat_lim)
 
         if not self.kI_x == 0.0:
             self.integ_x = self.integ_x + (1/self.kI_x) * (u_sat_x - u_unsat_x)
@@ -69,11 +71,11 @@ class ballController:
 
         return u_sat_x, u_sat_y
 
-    def sat(self, u):
-        if u > self.sat_lim:
-            return self.sat_lim
-        if u < -self.sat_lim:
-            return -self.sat_lim 
+    def sat(self, u, lim):
+        if u > lim:
+            return lim
+        if u < -lim:
+            return -lim 
         return u
 
 
