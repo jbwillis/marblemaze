@@ -11,7 +11,7 @@ def main():
     show_stuff = True
     solver = mazeSolver(show_stuff)
     controller = ballController()
-    servo = ServoControl(top_center=0., bot_center=0.0)
+    servo = ServoControl(top_center=0.1, bot_center=0.1)
 
     vid = cv.VideoCapture(0)
     # cv.namedWindow("Empty")
