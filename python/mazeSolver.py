@@ -26,8 +26,14 @@ class mazeSolver:
         # self.marbleHSVHigh = np.array([50,100,255])
 
         # blue ball
-        self.marbleHSVLow = np.array([105,100,80])
-        self.marbleHSVHigh = np.array([120,255,255])
+        # self.marbleHSVLow = np.array([105,100,80])
+        # self.marbleHSVHigh = np.array([120,255,255])
+
+        # red ball
+        self.marbleHSVLow_1 = np.array([0,80,80])
+        self.marbleHSVHigh_1 = np.array([10,255,255])
+        self.marbleHSVLow_2 = np.array([165,80,80])
+        self.marbleHSVHigh_2 = np.array([180,255,255])
 
 
     def get_max_contour(self, binary):
@@ -136,13 +142,15 @@ class mazeSolver:
         # find marble
         frameHSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
-        marbleframe = cv.inRange(frameHSV, self.marbleHSVLow, self.marbleHSVHigh)
-        # cv.imshow('marble_1', marbleframe)
+        marbleframe_1 = cv.inRange(frameHSV, self.marbleHSVLow_1, self.marbleHSVHigh_2)
+        marbleframe_2 = cv.inRange(frameHSV, self.marbleHSVLow_2, self.marbleHSVHigh_2)
+        marbleframe = cv.bitwise_or(marbleframe_1, marbleframe_2)
+        cv.imshow('marble_1', marbleframe)
         marbleframe = self.filterMarbleNoise(marbleframe)
-        # cv.imshow('marble_2', marbleframe)
+        cv.imshow('marble_2', marbleframe)
 
         marbleframe = cv.Canny(marbleframe,100,255)
-        # cv.imshow('marble_conts', marbleframe)
+        cv.imshow('marble_conts', marbleframe)
 
         marble = self.get_max_contour(marbleframe)
         marblerect = None
