@@ -21,6 +21,7 @@ def main():
     start = time.time()
 
     marble_pos_tm1 = None
+    waypoint = (200.0, 200.0)
     while vid.isOpened():
         ret, frame = vid.read()
         frame = frame[125:350 , 225:450]
@@ -29,8 +30,6 @@ def main():
             break
 
         marble_pos, _ = solver.solveMaze(frame, 0, False)
-
-        waypoint = (200.0, 200.0)
 
         print(marble_pos, waypoint)
 
@@ -62,6 +61,10 @@ def main():
         cmd = cv.waitKey(1)
         if cmd == ord('q'):         # q = quit
             break
+        elif cmd == ord('g'):       # g = switch waypoint
+            waypoint = (150, 200)
+        elif cmd == ord('h'):       # g = switch waypoint
+            waypoint = (250, 200)
         elif cmd == ord(' '):       # spacebar = pause controller
             pause = not pause
         elif cmd == ord('r'):       # r = reset to level
