@@ -36,7 +36,7 @@ class mazeSolver:
         self.marbleHSVHigh_2 = np.array([180,255,255])
 
         self.marbleBGRLow = np.array([90,70,170])
-        self.marbleBGRHigh = np.array([140,130,200])
+        self.marbleBGRHigh = np.array([180,170,240])
 
 
     def get_max_contour(self, binary):
@@ -330,7 +330,7 @@ class mazeSolver:
     def solveMaze(self, frame, goal, solveFlag):
         self.warped = self.perspectiveWarp(frame)
         if self.warped is None:
-            return None, None
+            return None, None, None
 
         self.goal = goal
 
@@ -366,19 +366,20 @@ class mazeSolver:
                 waypoint = (self.x_grid.item(marble_x_closest+1), current_grid_y)
             elif direction == -1 and (marble_x_closest, marble_y_closest) == goal_pos:
                 print("Goal!!!!")
-                waypoint = goal_pos
+                waypoint = None
             else:
                 print("This maze is unsolvable!")
                 waypoint = None
             self.waypoint = waypoint
 
+        policyframe = None
         if self.show_stuff:
-            self.showCoolStuff()
+            policyframe = self.showCoolStuff()
 
         if self.marble_pos is not None:
-            return np.array(self.marble_pos), self.waypoint
+            return np.array(self.marble_pos), self.waypoint, policyframe
         else:
-            return self.marble_pos, self.waypoint
+            return self.marble_pos, self.waypoint, policyframe
 
 
     def showCoolStuff(self):
@@ -415,3 +416,7 @@ class mazeSolver:
             cv.circle(warp_draw, goal_pos, 5, (0,255,0), -1)
 
             cv.imshow('Policy and Marble', warp_draw)
+            return warp_draw
+        return None
+
+        
