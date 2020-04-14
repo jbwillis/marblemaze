@@ -35,6 +35,9 @@ class mazeSolver:
         self.marbleHSVLow_2 = np.array([165,80,80])
         self.marbleHSVHigh_2 = np.array([180,255,255])
 
+        self.marbleBGRLow = np.array([90,70,170])
+        self.marbleBGRHigh = np.array([140,130,200])
+
 
     def get_max_contour(self, binary):
         contours, hierarchy = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -79,16 +82,34 @@ class mazeSolver:
     #
     #     return approx
 
+    # def get_corners(self, frame):
+    #     frame = cv.medianBlur(frame[:,:590,:], 5)
+    #     ret,walls_r = cv.threshold(frame[:,:,2],30,255,cv.THRESH_BINARY_INV)
+    #
+    #     wall_cnt, _ = cv.findContours(walls_r, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    #     contour = np.vstack([wall_cnt[i] for i in range(len(wall_cnt))])
+    #     hull = cv.convexHull(contour)
+    #
+    #     epsilon = 0.1*cv.arcLength(hull, True)
+    #     approx = cv.approxPolyDP(hull, epsilon, True).reshape(4,2)
+    #     approx = approx[np.argsort(approx[:, 0])]
+    #     left_y = np.argmin([approx[0,1],approx[1,1]])
+    #     right_y = np.argmin([approx[2,1],approx[3,1]])
+    #     if left_y:
+    #         approx[[0, 1]] = approx[[1, 0]]
+    #     if right_y:
+    #         approx[[2, 3]] = approx[[3, 2]]
+    #
+    #     return approx
+
     def get_corners(self, frame):
-        frame = cv.medianBlur(frame[:,:590,:], 5)
-        ret,walls_r = cv.threshold(frame[:,:,2],30,255,cv.THRESH_BINARY_INV)
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        ret,walls = cv.threshold(gray,180,255,cv.THRESH_BINARY_INV)
 
-        wall_cnt, _ = cv.findContours(walls_r, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        contour = np.vstack([wall_cnt[i] for i in range(len(wall_cnt))])
-        hull = cv.convexHull(contour)
+        wall_cnt = self.get_max_contour(walls)
 
-        epsilon = 0.1*cv.arcLength(hull, True)
-        approx = cv.approxPolyDP(hull, epsilon, True).reshape(4,2)
+        epsilon = 0.1*cv.arcLength(wall_cnt, True)
+        approx = cv.approxPolyDP(wall_cnt, epsilon, True).reshape(4,2)
         approx = approx[np.argsort(approx[:, 0])]
         left_y = np.argmin([approx[0,1],approx[1,1]])
         right_y = np.argmin([approx[2,1],approx[3,1]])
@@ -137,47 +158,66 @@ class mazeSolver:
 
 
     def segmentImg(self, frame):
-        frame = cv.medianBlur(frame, 5)
+        # frame = cv.medianBlur(frame, 5)
 
         # find marble
         frameHSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
-        marbleframe_1 = cv.inRange(frameHSV, self.marbleHSVLow_1, self.marbleHSVHigh_2)
-        marbleframe_2 = cv.inRange(frameHSV, self.marbleHSVLow_2, self.marbleHSVHigh_2)
-        marbleframe = cv.bitwise_or(marbleframe_1, marbleframe_2)
-        cv.imshow('marble_1', marbleframe)
-        marbleframe = self.filterMarbleNoise(marbleframe)
-        cv.imshow('marble_2', marbleframe)
+        ret, marble = cv.threshold(frameHSV[:,:,1],80,255,cv.THRESH_BINARY)
+        kernel = np.ones((3,3),np.uint8)
+        marble = cv.erode(marble,kernel, iterations=2)
+        marble = cv.dilate(marble,kernel, iterations=2)
+        rgb_marb = cv.bitwise_and(frame, frame, mask=marble)
+        rgb_marb = cv.inRange(rgb_marb, self.marbleBGRLow, self.marbleBGRHigh)
+        rgb_marb = cv.dilate(rgb_marb,kernel, iterations=4)
+        rgb_marb = cv.erode(rgb_marb,kernel,iterations=4)
+        rgb_marb = cv.erode(rgb_marb,kernel,iterations=1)
+        rgb_marb = cv.dilate(rgb_marb,kernel, iterations=1)
+        cv.imshow('marb', rgb_marb)
 
-        marbleframe = cv.Canny(marbleframe,100,255)
-        cv.imshow('marble_conts', marbleframe)
+        # marbleframe_1 = cv.inRange(frameHSV, self.marbleHSVLow_1, self.marbleHSVHigh_2)
+        # marbleframe_2 = cv.inRange(frameHSV, self.marbleHSVLow_2, self.marbleHSVHigh_2)
+        # marbleframe = cv.bitwise_or(marbleframe_1, marbleframe_2)
+        # cv.imshow('marble_1', marbleframe)
+        # marbleframe = self.filterMarbleNoise(marbleframe)
+        # cv.imshow('marble_2', marbleframe)
+        #
+        # marbleframe = cv.Canny(marbleframe,100,255)
+        # cv.imshow('marble_conts', marbleframe)
 
-        marble = self.get_max_contour(marbleframe)
-        marblerect = None
+        marble = self.get_max_contour(rgb_marb)
+        # marblerect = None
         if marble is not None:
             center, rad = cv.minEnclosingCircle(marble)
-            if rad < 10.0:
-                print("Where's the marble?!!")
-                center = None # didn't actually find the marble
-            else:
-                marblerect = cv.boundingRect(marble)
+            # if rad < 10.0:
+            #     print("Where's the marble?!!")
+            #     center = None # didn't actually find the marble
+            # else:
+            #     marblerect = cv.boundingRect(marble)
         else:
             print("Where's the marble?!!")
             center = None
 
 
         # find maze walls
-        maze = cv.inRange(frame, self.mazeBGRLow, self.mazeBGRHigh)
-        cv.imshow("maze marble", maze)
+        # maze = cv.inRange(frame, self.mazeBGRLow, self.mazeBGRHigh)
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        ret, maze = cv.threshold(gray,190,255,cv.THRESH_BINARY_INV)
+        maze = maze - cv.dilate(rgb_marb, kernel, iterations=2)
+        # maze = cv.adaptiveThreshold(gray, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2)
+        # kernel = np.ones((3,3),np.uint8)
+        maze = cv.erode(maze,kernel, iterations=1)
+        maze = cv.dilate(maze,kernel,iterations=1)
+        # cv.imshow("maze marble", maze)
 
-        if marblerect is not None:
-            x, y, w, h = marblerect
-            # remove marble from maze
-            cv.rectangle(maze, (x-2,y-2), (x+w+2, y+h+2), 0, -1) # black, filled rectangle
+        # if marblerect is not None:
+        #     x, y, w, h = marblerect
+        #     # remove marble from maze
+        #     cv.rectangle(maze, (x-2,y-2), (x+w+2, y+h+2), 0, -1) # black, filled rectangle
 
 
         maze = self.filterMazeNoise(maze)
-        cv.imshow("maze no marble", maze)
+        # cv.imshow("maze no marble", maze)
 
         return maze, center
 

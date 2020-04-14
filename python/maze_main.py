@@ -9,7 +9,7 @@ show_stuff = True
 solver = mazeSolver(show_stuff)
 goal = 97 # goal position read from left to right, top to bottom
 
-vid = cv.VideoCapture('../images/maze_blueball.avi')
+vid = cv.VideoCapture('../images/maze_newcam.avi')
 # vid = cv.VideoCapture(0)
 
 solveFlag =True
