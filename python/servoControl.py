@@ -5,8 +5,8 @@ import time
 RANGE_MAX = 1650
 RANGE_MIN = 1350
 
-TOP_RANGE_OFFSET = -150
-BOT_RANGE_OFFSET = 0
+TOP_RANGE_OFFSET = -25
+BOT_RANGE_OFFSET = -125
 
 class ServoControl:
     def __init__(self, top_center=0.0, bot_center=0.0, port='/dev/ttyUSB0', baud=115200):
@@ -30,6 +30,7 @@ class ServoControl:
             cmd_string = "{},{}\n".format(int(top_cmd_us), int(bot_cmd_us))
             if self.ser_valid:
                 self.ser.write(cmd_string.encode())
+                print("SerialControl writing: ", cmd_string)
             else:
                 print("SerialControl writing: ", cmd_string)
             return

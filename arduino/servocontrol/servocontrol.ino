@@ -9,8 +9,8 @@ Servo top;
 #define RANGE_MAX 1700
 #define RANGE_MIN 1300
 
-#define TOP_RANGE_OFFSET -150
-#define BOT_RANGE_OFFSET 0
+#define TOP_RANGE_OFFSET -25
+#define BOT_RANGE_OFFSET -125
 
 void setup() {
   bot.attach(9);
